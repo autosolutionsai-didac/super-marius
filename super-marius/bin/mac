@@ -1,0 +1,102 @@
+#!/bin/bash
+# mac — Super Marius CLI: desktop control wrapper around Hammerspoon's hs CLI.
+# https://github.com/autosolutionsai-didac/super-marius
+set -e
+
+cmd="${1:-}"
+shift || true
+
+case "$cmd" in
+  click)
+    x="$1"; y="$2"
+    hs -c "hs.eventtap.leftClick({x=$x, y=$y}); return 'clicked $x,$y'"
+    ;;
+  rclick)
+    x="$1"; y="$2"
+    hs -c "hs.eventtap.rightClick({x=$x, y=$y}); return 'right-clicked $x,$y'"
+    ;;
+  dclick)
+    x="$1"; y="$2"
+    hs -c "hs.eventtap.doubleClick({x=$x, y=$y}); return 'double-clicked $x,$y'"
+    ;;
+  mouse)
+    x="$1"; y="$2"
+    hs -c "hs.mouse.absolutePosition({x=$x, y=$y}); return 'moved to $x,$y'"
+    ;;
+  pos)
+    hs -c 'local p = hs.mouse.absolutePosition(); return string.format("%d,%d", math.floor(p.x), math.floor(p.y))'
+    ;;
+  type)
+    text="$*"
+    hs -c "hs.eventtap.keyStrokes([[$text]]); return 'typed'"
+    ;;
+  key)
+    # usage: mac key cmd-c   |   mac key shift-tab   |   mac key return
+    combo="$1"
+    mods=$(echo "$combo" | awk -F- '{for(i=1;i<NF;i++) printf "\"%s\",", $i}' | sed 's/,$//')
+    keyname=$(echo "$combo" | awk -F- '{print $NF}')
+    hs -c "hs.eventtap.keyStroke({$mods}, '$keyname'); return 'pressed $combo'"
+    ;;
+  scroll)
+    # usage: mac scroll dx dy   (positive y = up, positive x = right)
+    dx="${1:-0}"; dy="${2:-0}"
+    hs -c "hs.eventtap.scrollWheel({$dx, $dy}, {}, 'pixel'); return 'scrolled $dx,$dy'"
+    ;;
+  screenshot)
+    path="${1:-/tmp/mac-screenshot-$(date +%s).png}"
+    hs -c "local img = hs.screen.mainScreen():snapshot(); if img then img:saveToFile('$path'); return '$path' else return 'failed: no image' end"
+    ;;
+  say)
+    text="$*"
+    hs -c "hs.alert.show([[$text]], 3); return 'shown'"
+    ;;
+  apps)
+    hs -c 'local out={}; for _,a in ipairs(hs.application.runningApplications()) do if a:kind()==1 then table.insert(out, a:name()) end end; table.sort(out); return table.concat(out, "\n")'
+    ;;
+  focus)
+    name="$*"
+    hs -c "local a = hs.application.find([[$name]]); if a then a:activate(); return 'focused: ' .. a:name() else return 'not found: $name' end"
+    ;;
+  windows)
+    hs -c 'local out={}; for _,w in ipairs(hs.window.allWindows()) do local a = w:application(); table.insert(out, string.format("[%s] %s", a and a:name() or "?", w:title() or "")) end; return table.concat(out, "\n")'
+    ;;
+  screen)
+    hs -c 'local f = hs.screen.mainScreen():frame(); return string.format("%dx%d at %d,%d", math.floor(f.w), math.floor(f.h), math.floor(f.x), math.floor(f.y))'
+    ;;
+  eval)
+    hs -c "$*"
+    ;;
+  ""|help|-h|--help)
+    cat <<'EOF'
+mac — desktop control on macOS via Hammerspoon
+
+Mouse:
+  mac click X Y          left-click at coords
+  mac rclick X Y         right-click at coords
+  mac dclick X Y         double-click at coords
+  mac mouse X Y          move cursor (no click)
+  mac pos                print current cursor position
+  mac scroll DX DY       scroll wheel (pixels)
+
+Keyboard:
+  mac type "text"        type text
+  mac key cmd-c          press key combo (mods-key)
+  mac key return         press a single key
+
+Screen / windows / apps:
+  mac screenshot [path]  capture full screen to PNG (default /tmp)
+  mac screen             main screen size and position
+  mac windows            list all visible windows
+  mac apps               list running apps with UI
+  mac focus "Safari"     bring an app to front
+  mac say "hello"        show on-screen alert
+
+Escape hatch:
+  mac eval 'hs.lua...'   run raw Hammerspoon Lua and return result
+EOF
+    ;;
+  *)
+    echo "unknown command: $cmd (run 'mac help')" >&2
+    exit 2
+    ;;
+esac

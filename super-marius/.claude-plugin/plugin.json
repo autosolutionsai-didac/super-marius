@@ -1,0 +1,18 @@
+{
+  "name": "super-marius",
+  "version": "1.0.0",
+  "description": "Super Marius — let an agent click, type, and screenshot on macOS. Hammerspoon-based desktop automation, Tahoe-compatible.",
+  "author": {
+    "name": "Marius",
+    "email": "didac@autosolutions.ai"
+  },
+  "license": "MIT",
+  "keywords": [
+    "macos",
+    "desktop-automation",
+    "computer-use",
+    "hammerspoon",
+    "tahoe",
+    "super-marius"
+  ]
+}
