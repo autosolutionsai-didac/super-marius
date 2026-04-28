@@ -18,6 +18,8 @@
         "name": "Marius",
         "email": "didac@autosolutions.ai"
       },
+      "homepage": "https://github.com/autosolutionsai-didac/super-marius",
+      "repository": "https://github.com/autosolutionsai-didac/super-marius",
       "license": "MIT",
       "keywords": [
         "macos",
